@@ -77,7 +77,7 @@ export default function Register() {
       <div className="auth-card">
 
         <div className="auth-logo">
-          <span className="logo-icon">🌉</span>
+          <span className="logo-icon">AB</span>
           <h1>AbilityBridge</h1>
           <p>Skills-to-Income Platform</p>
         </div>

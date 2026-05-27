@@ -62,7 +62,7 @@ export default function CompleteProfile() {
     <div className="auth-page">
       <div className="auth-card" style={{ maxWidth: 560 }}>
         <div className="auth-logo">
-          <span className="logo-icon">🌉</span>
+          <span className="logo-icon">AB</span>
           <h1>Complete Your Profile</h1>
           <p>Tell us about yourself so we can match you to the right opportunities</p>
         </div>

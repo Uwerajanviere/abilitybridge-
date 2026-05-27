@@ -21,7 +21,7 @@ export const TRACKS = {
   digital: {
     id: 'digital',
     label: 'Digital Skills',
-    icon: '💻',
+    icon: '',
     color: '#4F46E5',
     description: 'Typing, data entry, design, social media management',
     skills: ['Data Entry', 'Social Media Management', 'Basic Graphic Design', 'Virtual Assistant', 'Content Writing'],
@@ -29,7 +29,7 @@ export const TRACKS = {
   voice: {
     id: 'voice',
     label: 'Voice & Communication',
-    icon: '🎙️',
+    icon: '',
     color: '#059669',
     description: 'Customer calls, audio narration, podcasting, transcription',
     skills: ['Customer Support Calls', 'Audio Narration', 'Podcast Production', 'Language Tutoring', 'Transcription'],
@@ -37,7 +37,7 @@ export const TRACKS = {
   handcraft: {
     id: 'handcraft',
     label: 'Hands-On Crafts',
-    icon: '🧵',
+    icon: '',
     color: '#D97706',
     description: 'Sewing, beadwork, candle making, handmade products',
     skills: ['Sewing & Tailoring', 'Beadwork & Jewelry', 'Candle Making', 'Basket Weaving', 'Soap Making'],
@@ -45,7 +45,7 @@ export const TRACKS = {
   cognitive: {
     id: 'cognitive',
     label: 'Structured Cognitive Tasks',
-    icon: '🧩',
+    icon: '',
     color: '#7C3AED',
     description: 'Repetitive structured tasks, data review, pattern work',
     skills: ['Data Review & QA', 'Product Packaging', 'Inventory Counting', 'Form Processing', 'Basic Coding'],

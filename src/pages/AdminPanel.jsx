@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react'
 import {
   collection, onSnapshot, query, orderBy,
-  doc, updateDoc, getDocs,
+  doc, updateDoc,
 } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
-import { getDisabilityLabel, getTrackDetails } from '../utils/abilityEngine'
-import { TRAINING_MODULES } from '../utils/trainingData'
+import { useLanguage } from '../context/LanguageContext'
+import { getDisabilityLabel } from '../utils/abilityEngine'
 
 export default function AdminPanel() {
   const { currentUser } = useAuth()
+  const { t } = useLanguage()
   const [users, setUsers] = useState([])
   const [gigs, setGigs] = useState([])
   const [products, setProducts] = useState([])
@@ -69,81 +70,43 @@ export default function AdminPanel() {
     <div className="page">
       <div className="admin-header">
         <div>
-          <h2>Admin Panel</h2>
-          <p className="text-muted">NGO / Coordinator Dashboard</p>
+          <h2>{t('admin_title')}</h2>
+          <p className="text-muted">{t('admin_subtitle')}</p>
         </div>
       </div>
 
-      {/* Summary stats */}
       <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon">👥</div>
-          <div>
-            <div className="stat-value">{totalUsers}</div>
-            <div className="stat-label">Total Users</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">🏆</div>
-          <div>
-            <div className="stat-value">{totalCerts}</div>
-            <div className="stat-label">Certificates Issued</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">💼</div>
-          <div>
-            <div className="stat-value">{openGigs}</div>
-            <div className="stat-label">Open Gigs</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">💰</div>
-          <div>
-            <div className="stat-value">RWF {totalEarnings.toLocaleString()}</div>
-            <div className="stat-label">Total Earnings Tracked</div>
-          </div>
-        </div>
+        <div className="stat-card"><div><div className="stat-value">{totalUsers}</div><div className="stat-label">{t('admin_total_users')}</div></div></div>
+        <div className="stat-card"><div><div className="stat-value">{totalCerts}</div><div className="stat-label">{t('admin_certs_issued')}</div></div></div>
+        <div className="stat-card"><div><div className="stat-value">{openGigs}</div><div className="stat-label">{t('admin_open_gigs')}</div></div></div>
+        <div className="stat-card"><div><div className="stat-value">RWF {totalEarnings.toLocaleString()}</div><div className="stat-label">{t('admin_total_earnings')}</div></div></div>
       </div>
 
-      {/* Tabs */}
       <div className="market-tabs">
         <button className={`market-tab ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
-          👥 Users ({users.length})
+          {t('admin_users_tab')} ({users.length})
         </button>
         <button className={`market-tab ${activeTab === 'gigs' ? 'active' : ''}`} onClick={() => setActiveTab('gigs')}>
-          💼 Gigs ({gigs.length})
+          {t('admin_gigs_tab')} ({gigs.length})
         </button>
         <button className={`market-tab ${activeTab === 'products' ? 'active' : ''}`} onClick={() => setActiveTab('products')}>
-          🛍️ Products ({products.length})
+          {t('admin_products_tab')} ({products.length})
         </button>
       </div>
 
-      {/* Users tab */}
       {activeTab === 'users' && (
         <>
           <div className="search-bar">
-            <input
-              type="text"
-              placeholder="Search users by name or email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <input type="text" placeholder={t('admin_search')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
-          {loading && <p className="text-muted">Loading users...</p>}
+          {loading && <p className="text-muted">{t('admin_loading')}</p>}
           <div className="admin-table-wrapper">
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Disability</th>
-                  <th>Tracks</th>
-                  <th>Modules Done</th>
-                  <th>Certs</th>
-                  <th>Earnings</th>
-                  <th>Role</th>
-                  <th>Actions</th>
+                  <th>{t('admin_name')}</th><th>{t('admin_email')}</th><th>{t('admin_disability')}</th>
+                  <th>{t('admin_tracks')}</th><th>{t('admin_modules_done')}</th><th>{t('admin_certs')}</th>
+                  <th>{t('admin_earnings')}</th><th>{t('admin_role')}</th><th>{t('admin_actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -152,34 +115,16 @@ export default function AdminPanel() {
                     <td><strong>{user.fullName}</strong><br /><small>{user.location}</small></td>
                     <td>{user.email}</td>
                     <td><small>{getDisabilityLabel(user.disabilityType)}</small></td>
-                    <td>
-                      {(user.assignedTracks || []).map((t) => (
-                        <span key={t} className="badge badge-outline" style={{ marginRight: 4 }}>{t}</span>
-                      ))}
-                    </td>
+                    <td>{(user.assignedTracks || []).map((tr) => (<span key={tr} className="badge badge-outline" style={{ marginRight: 4 }}>{tr}</span>))}</td>
                     <td>{user.completedModules?.length || 0}</td>
                     <td>{user.certificates?.length || 0}</td>
                     <td>RWF {(user.totalEarnings || 0).toLocaleString()}</td>
-                    <td>
-                      <span className={`badge ${user.role === 'admin' ? 'badge-primary' : 'badge-outline'}`}>
-                        {user.role || 'user'}
-                      </span>
-                    </td>
+                    <td><span className={`badge ${user.role === 'admin' ? 'badge-primary' : 'badge-outline'}`}>{user.role || 'user'}</span></td>
                     <td>
                       <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                        <button
-                          className="btn btn-sm btn-outline"
-                          onClick={(e) => { e.stopPropagation(); updateEarnings(user.id, user.totalEarnings || 0) }}
-                        >
-                          💰 Earnings
-                        </button>
+                        <button className="btn btn-sm btn-outline" onClick={(e) => { e.stopPropagation(); updateEarnings(user.id, user.totalEarnings || 0) }}>{t('admin_update_earnings')}</button>
                         {user.role !== 'admin' && user.id !== currentUser.uid && (
-                          <button
-                            className="btn btn-sm btn-outline"
-                            onClick={(e) => { e.stopPropagation(); promoteToAdmin(user.id) }}
-                          >
-                            ⬆ Admin
-                          </button>
+                          <button className="btn btn-sm btn-outline" onClick={(e) => { e.stopPropagation(); promoteToAdmin(user.id) }}>{t('admin_make_admin')}</button>
                         )}
                       </div>
                     </td>
@@ -191,19 +136,13 @@ export default function AdminPanel() {
         </>
       )}
 
-      {/* Gigs tab */}
       {activeTab === 'gigs' && (
         <div className="admin-table-wrapper">
           <table className="admin-table">
             <thead>
               <tr>
-                <th>Title</th>
-                <th>Category</th>
-                <th>Budget</th>
-                <th>Posted By</th>
-                <th>Applicants</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>{t('admin_title_col')}</th><th>{t('market_category')}</th><th>{t('admin_budget')}</th>
+                <th>{t('admin_posted_by')}</th><th>{t('admin_applicants')}</th><th>{t('admin_status')}</th><th>{t('admin_actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -214,15 +153,9 @@ export default function AdminPanel() {
                   <td>RWF {gig.budget?.toLocaleString()}</td>
                   <td>{gig.postedByName}</td>
                   <td>{gig.applicants?.length || 0}</td>
+                  <td><span className={`status-badge status-${gig.status}`}>{gig.status}</span></td>
                   <td>
-                    <span className={`status-badge status-${gig.status}`}>{gig.status}</span>
-                  </td>
-                  <td>
-                    <select
-                      value={gig.status}
-                      onChange={(e) => updateGigStatus(gig.id, e.target.value)}
-                      className="status-select"
-                    >
+                    <select value={gig.status} onChange={(e) => updateGigStatus(gig.id, e.target.value)} className="status-select">
                       <option value="open">Open</option>
                       <option value="in_progress">In Progress</option>
                       <option value="completed">Completed</option>
@@ -244,7 +177,7 @@ export default function AdminPanel() {
               {product.imageUrl ? (
                 <img src={product.imageUrl} alt={product.name} className="product-image" />
               ) : (
-                <div className="product-image-placeholder">🎨</div>
+                <div className="product-image-placeholder">No image</div>
               )}
               <div className="product-info">
                 <span className={`category-badge cat-${product.category?.toLowerCase()}`}>{product.category}</span>
@@ -284,7 +217,7 @@ export default function AdminPanel() {
                   <strong>Certificates:</strong>
                   <ul style={{ marginTop: '0.5rem' }}>
                     {selectedUser.certificates.map((c, i) => (
-                      <li key={i}>🎓 {c.moduleName} — {c.score}%</li>
+                      <li key={i}>{c.moduleName} — {c.score}%</li>
                     ))}
                   </ul>
                 </div>

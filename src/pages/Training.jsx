@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react'
 import { doc, updateDoc, arrayUnion, serverTimestamp, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
 import { TRAINING_MODULES, getModulesByTrack } from '../utils/trainingData'
-import { getTrackDetails, TRACKS } from '../utils/abilityEngine'
+import { getTrackDetails } from '../utils/abilityEngine'
 
 export default function Training() {
   const { currentUser, userProfile } = useAuth()
+  const { t } = useLanguage()
   const [profile, setProfile] = useState(userProfile)
   const [activeTrack, setActiveTrack] = useState(null)
   const [activeModule, setActiveModule] = useState(null)
@@ -51,14 +53,10 @@ export default function Training() {
   async function submitQuiz() {
     const quiz = activeModule.quiz
     let correct = 0
-    quiz.forEach((q, i) => {
-      if (quizState.answers[i] === q.correct) correct++
-    })
+    quiz.forEach((q, i) => { if (quizState.answers[i] === q.correct) correct++ })
     const score = Math.round((correct / quiz.length) * 100)
     const passed = score >= 70
-
     setQuizState((q) => ({ ...q, submitted: true, score }))
-
     if (passed && !completedModules.includes(activeModule.id)) {
       setSaving(true)
       try {
@@ -84,10 +82,9 @@ export default function Training() {
 
   return (
     <div className="page">
-      <h2>Training Modules</h2>
-      <p className="text-muted">Complete modules to earn certificates and unlock income opportunities.</p>
+      <h2>{t('train_title')}</h2>
+      <p className="text-muted">{t('train_subtitle')}</p>
 
-      {/* Track tabs */}
       <div className="track-tabs">
         {trackDetails.map((track) => (
           <button
@@ -96,17 +93,15 @@ export default function Training() {
             style={activeTrack === track.id ? { borderColor: track.color, color: track.color } : {}}
             onClick={() => { setActiveTrack(track.id); setActiveModule(null) }}
           >
-            {track.icon} {track.label}
+            {track.label}
           </button>
         ))}
       </div>
 
-      {/* Module list + detail */}
       <div className="training-layout">
-        {/* Module list */}
         <div className="module-list">
           {currentTrackModules.length === 0 && (
-            <p className="text-muted">No modules available for this track yet.</p>
+            <p className="text-muted">{t('train_no_modules')}</p>
           )}
           {currentTrackModules.map((mod) => {
             const done = isCompleted(mod.id)
@@ -117,23 +112,21 @@ export default function Training() {
                 className={`module-item ${active ? 'active' : ''} ${done ? 'completed' : ''}`}
                 onClick={() => openModule(mod)}
               >
-                <div className="module-item-icon">{done ? '✅' : '📖'}</div>
+                <div className="module-item-icon">{done ? '✓' : '○'}</div>
                 <div className="module-item-info">
                   <div className="module-item-title">{mod.title}</div>
                   <div className="module-item-meta">{mod.duration} · {mod.level}</div>
                 </div>
-                {done && <span className="badge badge-success">Done</span>}
+                {done && <span className="badge badge-success">{t('train_completed')}</span>}
               </div>
             )
           })}
         </div>
 
-        {/* Module detail */}
         <div className="module-detail">
           {!activeModule ? (
             <div className="module-placeholder">
-              <span>📚</span>
-              <p>Select a module to start learning</p>
+              <p>{t('train_select_module')}</p>
             </div>
           ) : (
             <>
@@ -141,13 +134,14 @@ export default function Training() {
                 <h3>{activeModule.title}</h3>
                 <div className="module-meta-row">
                   <span className="badge badge-outline">{activeModule.level}</span>
-                  <span className="badge badge-outline">⏱ {activeModule.duration}</span>
-                  {isCompleted(activeModule.id) && <span className="badge badge-success">✅ Completed</span>}
+                  <span className="badge badge-outline">{t('train_duration')}: {activeModule.duration}</span>
+                  {isCompleted(activeModule.id) && (
+                    <span className="badge badge-success">{t('train_completed')}</span>
+                  )}
                 </div>
                 <p>{activeModule.description}</p>
               </div>
 
-              {/* Video player */}
               <div className="video-container">
                 <iframe
                   src={`https://www.youtube.com/embed/${activeModule.videoId}`}
@@ -158,21 +152,20 @@ export default function Training() {
                 />
               </div>
 
-              {/* Quiz section */}
               <div className="quiz-section">
                 {!quizState.started && !quizState.submitted && (
                   <div className="quiz-start">
-                    <h4>Ready to test your knowledge?</h4>
-                    <p>Complete the quiz with 70% or higher to earn your certificate.</p>
+                    <h4>{t('train_quiz_ready')}</h4>
+                    <p>{t('train_quiz_pass_info')}</p>
                     <button className="btn btn-primary" onClick={startQuiz}>
-                      Start Quiz ({activeModule.quiz.length} questions)
+                      {t('train_start_quiz')} ({activeModule.quiz.length} {t('train_questions')})
                     </button>
                   </div>
                 )}
 
                 {quizState.started && !quizState.submitted && (
                   <div className="quiz-questions">
-                    <h4>Quiz</h4>
+                    <h4>{t('train_quiz_title')}</h4>
                     {activeModule.quiz.map((q, qi) => (
                       <div key={qi} className="quiz-question">
                         <p className="question-text">{qi + 1}. {q.question}</p>
@@ -199,7 +192,7 @@ export default function Training() {
                       onClick={submitQuiz}
                       disabled={Object.keys(quizState.answers).length < activeModule.quiz.length}
                     >
-                      Submit Quiz
+                      {t('train_submit_quiz')}
                     </button>
                   </div>
                 )}
@@ -208,29 +201,21 @@ export default function Training() {
                   <div className={`quiz-result ${quizState.score >= 70 ? 'passed' : 'failed'}`}>
                     {quizState.score >= 70 ? (
                       <>
-                        <div className="result-icon">🎉</div>
-                        <h4>Congratulations! You passed!</h4>
-                        <p>Score: <strong>{quizState.score}%</strong></p>
-                        {saving ? (
-                          <p>Saving your certificate...</p>
-                        ) : (
-                          <p>Your certificate has been added to your profile.</p>
-                        )}
+                        <h4>{t('train_passed')}</h4>
+                        <p>{t('train_score')}: <strong>{quizState.score}%</strong></p>
+                        <p>{saving ? t('train_saving_cert') : t('train_cert_saved')}</p>
                       </>
                     ) : (
                       <>
-                        <div className="result-icon">😔</div>
-                        <h4>Not quite — you scored {quizState.score}%</h4>
-                        <p>You need 70% to pass. Review the video and try again.</p>
+                        <h4>{t('train_failed')} {quizState.score}%</h4>
+                        <p>{t('train_need_70')}</p>
                         <button className="btn btn-outline" onClick={startQuiz}>
-                          Retry Quiz
+                          {t('train_retry')}
                         </button>
                       </>
                     )}
-
-                    {/* Show correct answers */}
                     <div className="answer-review">
-                      <h5>Answer Review</h5>
+                      <h5>{t('train_answer_review')}</h5>
                       {activeModule.quiz.map((q, qi) => {
                         const userAns = quizState.answers[qi]
                         const correct = q.correct
@@ -238,8 +223,8 @@ export default function Training() {
                         return (
                           <div key={qi} className={`answer-item ${isRight ? 'correct' : 'wrong'}`}>
                             <p><strong>{qi + 1}. {q.question}</strong></p>
-                            <p>Your answer: {q.options[userAns]} {isRight ? '✅' : '❌'}</p>
-                            {!isRight && <p className="correct-answer">Correct: {q.options[correct]}</p>}
+                            <p>{t('train_your_answer')}: {q.options[userAns]} {isRight ? t('train_correct') : t('train_wrong')}</p>
+                            {!isRight && <p className="correct-answer">{t('train_correct_answer')}: {q.options[correct]}</p>}
                           </div>
                         )
                       })}

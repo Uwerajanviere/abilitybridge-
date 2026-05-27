@@ -1,9 +1,12 @@
 import React, { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
+import VoiceReader from './VoiceReader'
 
 export default function Navbar() {
   const { currentUser, userProfile, logout } = useAuth()
+  const { t, lang, toggleLanguage } = useLanguage()
   const location = useLocation()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -14,10 +17,10 @@ export default function Navbar() {
   }
 
   const navLinks = [
-    { to: '/dashboard', label: 'Dashboard', icon: '🏠' },
-    { to: '/training', label: 'Training', icon: '📚' },
-    { to: '/marketplace', label: 'Marketplace', icon: '🛒' },
-    ...(userProfile?.role === 'admin' ? [{ to: '/admin', label: 'Admin', icon: '⚙️' }] : []),
+    { to: '/dashboard', label: t('nav_dashboard') },
+    { to: '/training',  label: t('nav_training') },
+    { to: '/marketplace', label: t('nav_marketplace') },
+    ...(userProfile?.role === 'admin' ? [{ to: '/admin', label: t('nav_admin') }] : []),
   ]
 
   return (
@@ -25,8 +28,7 @@ export default function Navbar() {
       <div className="navbar-inner">
         {/* Logo */}
         <Link to="/dashboard" className="navbar-logo">
-          <span>🌉</span>
-          <span>AbilityBridge</span>
+          AbilityBridge
         </Link>
 
         {/* Desktop nav links */}
@@ -37,39 +39,58 @@ export default function Navbar() {
               to={link.to}
               className={`nav-link ${location.pathname === link.to ? 'active' : ''}`}
             >
-              {link.icon} {link.label}
+              {link.label}
             </Link>
           ))}
         </div>
 
-        {/* User menu */}
-        <div className="navbar-user">
-          <button className="user-avatar-btn" onClick={() => setMenuOpen(!menuOpen)}>
-            <div className="user-avatar">
-              {userProfile?.fullName?.[0]?.toUpperCase() || '?'}
-            </div>
-            <span className="user-name">{userProfile?.fullName?.split(' ')[0]}</span>
-            <span className="chevron">▾</span>
+        {/* Right side controls */}
+        <div className="navbar-controls">
+          {/* Voice reader */}
+          <VoiceReader />
+
+          {/* Language toggle */}
+          <button
+            className="lang-toggle-btn"
+            onClick={toggleLanguage}
+            title={t('lang_toggle')}
+            aria-label={`Switch to ${t('lang_toggle')}`}
+          >
+            <span className="lang-flag">{lang === 'en' ? 'RW' : 'EN'}</span>
+            <span className="lang-label">{t('lang_toggle')}</span>
           </button>
 
-          {menuOpen && (
-            <div className="user-dropdown">
-              <div className="dropdown-header">
-                <strong>{userProfile?.fullName}</strong>
-                <small>{currentUser?.email}</small>
-                {userProfile?.role === 'admin' && <span className="badge badge-primary">Admin</span>}
+          {/* User menu */}
+          <div className="navbar-user">
+            <button className="user-avatar-btn" onClick={() => setMenuOpen(!menuOpen)}>
+              <div className="user-avatar">
+                {userProfile?.fullName?.[0]?.toUpperCase() || '?'}
               </div>
-              <div className="dropdown-divider" />
-              <button className="dropdown-item" onClick={handleLogout}>
-                🚪 Sign Out
-              </button>
-            </div>
-          )}
+              <span className="user-name">{userProfile?.fullName?.split(' ')[0]}</span>
+              <span className="chevron">▾</span>
+            </button>
+
+            {menuOpen && (
+              <div className="user-dropdown">
+                <div className="dropdown-header">
+                  <strong>{userProfile?.fullName}</strong>
+                  <small>{currentUser?.email}</small>
+                  {userProfile?.role === 'admin' && (
+                    <span className="badge badge-primary">{t('nav_admin')}</span>
+                  )}
+                </div>
+                <div className="dropdown-divider" />
+                <button className="dropdown-item" onClick={handleLogout}>
+                  {t('nav_signout')}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Mobile hamburger */}
         <button className="hamburger" onClick={() => setMenuOpen(!menuOpen)}>
-          ☰
+          {t('nav_menu')}
         </button>
       </div>
 
@@ -83,11 +104,15 @@ export default function Navbar() {
               className="mobile-nav-link"
               onClick={() => setMenuOpen(false)}
             >
-              {link.icon} {link.label}
+              {link.label}
             </Link>
           ))}
+          {/* Mobile language toggle */}
+          <button className="mobile-nav-link" onClick={toggleLanguage}>
+            {t('lang_toggle')}
+          </button>
           <button className="mobile-nav-link" onClick={handleLogout}>
-            🚪 Sign Out
+            {t('nav_signout')}
           </button>
         </div>
       )}

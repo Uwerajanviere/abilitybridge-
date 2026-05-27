@@ -6,14 +6,15 @@ import {
 } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
-import { TRACKS } from '../utils/abilityEngine'
+import { useLanguage } from '../context/LanguageContext'
 
 const CATEGORIES = ['All', 'Digital', 'Voice', 'Handcraft', 'Cognitive', 'Other']
 
 export default function Marketplace() {
   const { currentUser, userProfile } = useAuth()
+  const { t } = useLanguage()
   const location = useLocation()
-  const defaultTab = new URLSearchParams(location.search).get('tab') === 'sell' ? 'sell' : 'gigs'
+  const defaultTab = new URLSearchParams(location.search).get('tab') === 'sell' ? 'products' : 'gigs'
 
   const [tab, setTab] = useState(defaultTab)
   const [gigs, setGigs] = useState([])
@@ -22,15 +23,11 @@ export default function Marketplace() {
   const [loading, setLoading] = useState(true)
   const [showGigForm, setShowGigForm] = useState(false)
   const [showProductForm, setShowProductForm] = useState(false)
-
-  // Gig form state
   const [gigForm, setGigForm] = useState({ title: '', description: '', budget: '', category: 'Digital', deadline: '' })
-  // Product form state
   const [productForm, setProductForm] = useState({ name: '', description: '', price: '', category: 'Handcraft', imageUrl: '' })
   const [submitting, setSubmitting] = useState(false)
   const [successMsg, setSuccessMsg] = useState('')
 
-  // Load gigs
   useEffect(() => {
     const q = query(collection(db, 'gigs'), orderBy('createdAt', 'desc'))
     const unsub = onSnapshot(q, (snap) => {
@@ -40,7 +37,6 @@ export default function Marketplace() {
     return unsub
   }, [])
 
-  // Load products
   useEffect(() => {
     const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'))
     const unsub = onSnapshot(q, (snap) => {
@@ -64,13 +60,10 @@ export default function Marketplace() {
       })
       setGigForm({ title: '', description: '', budget: '', category: 'Digital', deadline: '' })
       setShowGigForm(false)
-      setSuccessMsg('Gig posted successfully!')
+      setSuccessMsg(t('market_gig_posted'))
       setTimeout(() => setSuccessMsg(''), 3000)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setSubmitting(false)
-    }
+    } catch (err) { console.error(err) }
+    finally { setSubmitting(false) }
   }
 
   async function listProduct(e) {
@@ -87,25 +80,18 @@ export default function Marketplace() {
       })
       setProductForm({ name: '', description: '', price: '', category: 'Handcraft', imageUrl: '' })
       setShowProductForm(false)
-      setSuccessMsg('Product listed successfully!')
+      setSuccessMsg(t('market_product_listed'))
       setTimeout(() => setSuccessMsg(''), 3000)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setSubmitting(false)
-    }
+    } catch (err) { console.error(err) }
+    finally { setSubmitting(false) }
   }
 
   async function applyToGig(gigId) {
     try {
-      await updateDoc(doc(db, 'gigs', gigId), {
-        applicants: arrayUnion(currentUser.uid),
-      })
-      setSuccessMsg('Application submitted!')
+      await updateDoc(doc(db, 'gigs', gigId), { applicants: arrayUnion(currentUser.uid) })
+      setSuccessMsg(t('market_application_sent'))
       setTimeout(() => setSuccessMsg(''), 3000)
-    } catch (err) {
-      console.error(err)
-    }
+    } catch (err) { console.error(err) }
   }
 
   const filteredGigs = filterCat === 'All' ? gigs : gigs.filter((g) => g.category === filterCat)
@@ -115,18 +101,18 @@ export default function Marketplace() {
     <div className="page">
       <div className="page-header">
         <div>
-          <h2>Marketplace</h2>
-          <p className="text-muted">Find gig work or sell your handmade products</p>
+          <h2>{t('market_title')}</h2>
+          <p className="text-muted">{t('market_subtitle')}</p>
         </div>
         <div className="page-header-actions">
           {tab === 'gigs' && (
             <button className="btn btn-primary" onClick={() => setShowGigForm(!showGigForm)}>
-              + Post a Gig
+              {t('market_post_gig')}
             </button>
           )}
           {tab === 'products' && (
             <button className="btn btn-primary" onClick={() => setShowProductForm(!showProductForm)}>
-              + List a Product
+              {t('market_list_product')}
             </button>
           )}
         </div>
@@ -134,22 +120,15 @@ export default function Marketplace() {
 
       {successMsg && <div className="alert alert-success">{successMsg}</div>}
 
-      {/* Tabs */}
       <div className="market-tabs">
         <button className={`market-tab ${tab === 'gigs' ? 'active' : ''}`} onClick={() => setTab('gigs')}>
-          💼 Gig Tasks
+          {t('market_gig_tasks')}
         </button>
         <button className={`market-tab ${tab === 'products' ? 'active' : ''}`} onClick={() => setTab('products')}>
-          🛍️ Product Store
+          {t('market_product_store')}
         </button>
-        {tab === 'sell' && (
-          <button className={`market-tab ${tab === 'sell' ? 'active' : ''}`} onClick={() => setTab('sell')}>
-            🏪 Sell
-          </button>
-        )}
       </div>
 
-      {/* Category filter */}
       <div className="category-filter">
         {CATEGORIES.map((cat) => (
           <button
@@ -162,144 +141,106 @@ export default function Marketplace() {
         ))}
       </div>
 
-      {/* Gig post form */}
       {showGigForm && (
         <div className="form-card">
-          <h4>Post a New Gig Task</h4>
+          <h4>{t('market_post_gig_title')}</h4>
           <form onSubmit={postGig}>
             <div className="form-row">
               <div className="form-group">
-                <label>Task Title *</label>
-                <input
-                  type="text"
-                  value={gigForm.title}
+                <label>{t('market_task_title')} *</label>
+                <input type="text" value={gigForm.title}
                   onChange={(e) => setGigForm({ ...gigForm, title: e.target.value })}
-                  placeholder="e.g. Data entry for 500 records"
-                  required
-                />
+                  placeholder={t('market_task_placeholder')} required />
               </div>
               <div className="form-group">
-                <label>Category *</label>
+                <label>{t('market_category')} *</label>
                 <select value={gigForm.category} onChange={(e) => setGigForm({ ...gigForm, category: e.target.value })}>
                   {CATEGORIES.filter((c) => c !== 'All').map((c) => <option key={c}>{c}</option>)}
                 </select>
               </div>
             </div>
             <div className="form-group">
-              <label>Description *</label>
-              <textarea
-                value={gigForm.description}
+              <label>{t('market_description')} *</label>
+              <textarea value={gigForm.description}
                 onChange={(e) => setGigForm({ ...gigForm, description: e.target.value })}
-                placeholder="Describe the task in detail..."
-                rows={3}
-                required
-              />
+                placeholder={t('market_desc_placeholder')} rows={3} required />
             </div>
             <div className="form-row">
               <div className="form-group">
-                <label>Budget (RWF) *</label>
-                <input
-                  type="number"
-                  value={gigForm.budget}
+                <label>{t('market_budget')} *</label>
+                <input type="number" value={gigForm.budget}
                   onChange={(e) => setGigForm({ ...gigForm, budget: e.target.value })}
-                  placeholder="e.g. 15000"
-                  min="0"
-                  required
-                />
+                  placeholder={t('market_budget_placeholder')} min="0" required />
               </div>
               <div className="form-group">
-                <label>Deadline</label>
-                <input
-                  type="date"
-                  value={gigForm.deadline}
-                  onChange={(e) => setGigForm({ ...gigForm, deadline: e.target.value })}
-                />
+                <label>{t('market_deadline')}</label>
+                <input type="date" value={gigForm.deadline}
+                  onChange={(e) => setGigForm({ ...gigForm, deadline: e.target.value })} />
               </div>
             </div>
             <div className="form-actions">
-              <button type="button" className="btn btn-outline" onClick={() => setShowGigForm(false)}>Cancel</button>
+              <button type="button" className="btn btn-outline" onClick={() => setShowGigForm(false)}>{t('market_cancel')}</button>
               <button type="submit" className="btn btn-primary" disabled={submitting}>
-                {submitting ? 'Posting...' : 'Post Gig'}
+                {submitting ? t('market_posting') : t('market_post_btn')}
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Product listing form */}
       {showProductForm && (
         <div className="form-card">
-          <h4>List a Product for Sale</h4>
+          <h4>{t('market_list_title')}</h4>
           <form onSubmit={listProduct}>
             <div className="form-row">
               <div className="form-group">
-                <label>Product Name *</label>
-                <input
-                  type="text"
-                  value={productForm.name}
+                <label>{t('market_product_name')} *</label>
+                <input type="text" value={productForm.name}
                   onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
-                  placeholder="e.g. Handwoven basket"
-                  required
-                />
+                  placeholder={t('market_product_placeholder')} required />
               </div>
               <div className="form-group">
-                <label>Category *</label>
+                <label>{t('market_category')} *</label>
                 <select value={productForm.category} onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}>
                   {CATEGORIES.filter((c) => c !== 'All').map((c) => <option key={c}>{c}</option>)}
                 </select>
               </div>
             </div>
             <div className="form-group">
-              <label>Description *</label>
-              <textarea
-                value={productForm.description}
+              <label>{t('market_description')} *</label>
+              <textarea value={productForm.description}
                 onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
-                placeholder="Describe your product..."
-                rows={3}
-                required
-              />
+                placeholder={t('market_desc_product_placeholder')} rows={3} required />
             </div>
             <div className="form-row">
               <div className="form-group">
-                <label>Price (RWF) *</label>
-                <input
-                  type="number"
-                  value={productForm.price}
+                <label>{t('market_price')} *</label>
+                <input type="number" value={productForm.price}
                   onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
-                  placeholder="e.g. 5000"
-                  min="0"
-                  required
-                />
+                  placeholder={t('market_price_placeholder')} min="0" required />
               </div>
               <div className="form-group">
-                <label>Image URL (optional)</label>
-                <input
-                  type="url"
-                  value={productForm.imageUrl}
+                <label>{t('market_image_url')}</label>
+                <input type="url" value={productForm.imageUrl}
                   onChange={(e) => setProductForm({ ...productForm, imageUrl: e.target.value })}
-                  placeholder="https://..."
-                />
+                  placeholder="https://..." />
               </div>
             </div>
             <div className="form-actions">
-              <button type="button" className="btn btn-outline" onClick={() => setShowProductForm(false)}>Cancel</button>
+              <button type="button" className="btn btn-outline" onClick={() => setShowProductForm(false)}>{t('market_cancel')}</button>
               <button type="submit" className="btn btn-primary" disabled={submitting}>
-                {submitting ? 'Listing...' : 'List Product'}
+                {submitting ? t('market_listing') : t('market_list_btn')}
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Gigs list */}
       {tab === 'gigs' && (
         <div className="cards-grid">
-          {loading && <p className="text-muted">Loading gigs...</p>}
+          {loading && <p className="text-muted">{t('market_loading')}</p>}
           {!loading && filteredGigs.length === 0 && (
-            <div className="empty-state">
-              <span>💼</span>
-              <p>No gigs posted yet. Be the first to post one!</p>
-            </div>
+            <div className="empty-state"><p>{t('market_no_gigs')}</p></div>
           )}
           {filteredGigs.map((gig) => {
             const alreadyApplied = gig.applicants?.includes(currentUser.uid)
@@ -313,10 +254,10 @@ export default function Marketplace() {
                 <p className="gig-description">{gig.description}</p>
                 <div className="gig-footer">
                   <div className="gig-meta">
-                    <span>💰 RWF {gig.budget?.toLocaleString()}</span>
-                    {gig.deadline && <span>📅 {gig.deadline}</span>}
-                    <span>👤 {gig.postedByName}</span>
-                    <span>👥 {gig.applicants?.length || 0} applicants</span>
+                    <span>RWF {gig.budget?.toLocaleString()}</span>
+                    {gig.deadline && <span>{gig.deadline}</span>}
+                    <span>{gig.postedByName}</span>
+                    <span>{gig.applicants?.length || 0} {t('market_applicants')}</span>
                   </div>
                   {gig.postedBy !== currentUser.uid && gig.status === 'open' && (
                     <button
@@ -324,7 +265,7 @@ export default function Marketplace() {
                       onClick={() => !alreadyApplied && applyToGig(gig.id)}
                       disabled={alreadyApplied}
                     >
-                      {alreadyApplied ? '✓ Applied' : 'Apply Now'}
+                      {alreadyApplied ? `✓ ${t('market_applied')}` : t('market_apply')}
                     </button>
                   )}
                 </div>
@@ -334,22 +275,17 @@ export default function Marketplace() {
         </div>
       )}
 
-      {/* Products list */}
       {tab === 'products' && (
         <div className="products-grid">
           {filteredProducts.length === 0 && (
-            <div className="empty-state">
-              <span>🛍️</span>
-              <p>No products listed yet. List your first product!</p>
-            </div>
+            <div className="empty-state"><p>{t('market_no_products')}</p></div>
           )}
           {filteredProducts.map((product) => (
             <div key={product.id} className="product-card">
-              {product.imageUrl ? (
-                <img src={product.imageUrl} alt={product.name} className="product-image" />
-              ) : (
-                <div className="product-image-placeholder">🎨</div>
-              )}
+              {product.imageUrl
+                ? <img src={product.imageUrl} alt={product.name} className="product-image" />
+                : <div className="product-image-placeholder">No image</div>
+              }
               <div className="product-info">
                 <span className={`category-badge cat-${product.category?.toLowerCase()}`}>{product.category}</span>
                 <h4>{product.name}</h4>
@@ -360,7 +296,7 @@ export default function Marketplace() {
                 </div>
                 {product.sellerId !== currentUser.uid && (
                   <button className="btn btn-primary btn-sm" style={{ marginTop: '0.5rem', width: '100%' }}>
-                    Contact Seller
+                    {t('market_contact_seller')}
                   </button>
                 )}
               </div>

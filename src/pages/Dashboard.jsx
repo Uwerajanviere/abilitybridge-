@@ -3,14 +3,15 @@ import { Link } from 'react-router-dom'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
-import { getTrackDetails, getDisabilityLabel, TRACKS } from '../utils/abilityEngine'
+import { useLanguage } from '../context/LanguageContext'
+import { getTrackDetails, getDisabilityLabel } from '../utils/abilityEngine'
 import { TRAINING_MODULES } from '../utils/trainingData'
 
 export default function Dashboard() {
   const { currentUser, userProfile } = useAuth()
+  const { t } = useLanguage()
   const [profile, setProfile] = useState(userProfile)
 
-  // Live-sync profile from Firestore
   useEffect(() => {
     if (!currentUser) return
     const unsub = onSnapshot(doc(db, 'users', currentUser.uid), (snap) => {
@@ -26,7 +27,6 @@ export default function Dashboard() {
   const completedModules = profile.completedModules || []
   const certificates = profile.certificates || []
 
-  // Calculate progress per track
   const trackProgress = assignedTracks.map((trackId) => {
     const modules = TRAINING_MODULES.filter((m) => m.track === trackId)
     const done = modules.filter((m) => completedModules.includes(m.id)).length
@@ -38,56 +38,49 @@ export default function Dashboard() {
 
   return (
     <div className="page">
-      {/* Welcome header */}
       <div className="dashboard-header">
         <div>
-          <h2>Welcome back, {profile.fullName?.split(' ')[0]} 👋</h2>
-          <p className="text-muted">{getDisabilityLabel(profile.disabilityType)} · {profile.location || 'Location not set'}</p>
+          <h2>{t('dash_welcome')}, {profile.fullName?.split(' ')[0]}</h2>
+          <p className="text-muted">
+            {getDisabilityLabel(profile.disabilityType)} · {profile.location || t('dash_location_not_set')}
+          </p>
         </div>
         <div className="earnings-badge">
-          <span className="earnings-label">Total Earned</span>
+          <span className="earnings-label">{t('dash_total_earned')}</span>
           <span className="earnings-amount">RWF {(profile.totalEarnings || 0).toLocaleString()}</span>
         </div>
       </div>
 
-      {/* Stats row */}
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-icon">📚</div>
           <div>
             <div className="stat-value">{completedModules.length}</div>
-            <div className="stat-label">Modules Completed</div>
+            <div className="stat-label">{t('dash_modules_completed')}</div>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">🏆</div>
           <div>
             <div className="stat-value">{certificates.length}</div>
-            <div className="stat-label">Certificates Earned</div>
+            <div className="stat-label">{t('dash_certificates')}</div>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">🎯</div>
           <div>
             <div className="stat-value">{assignedTracks.length}</div>
-            <div className="stat-label">Skill Tracks</div>
+            <div className="stat-label">{t('dash_skill_tracks')}</div>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">📈</div>
           <div>
             <div className="stat-value">{overallProgress}%</div>
-            <div className="stat-label">Overall Progress</div>
+            <div className="stat-label">{t('dash_overall_progress')}</div>
           </div>
         </div>
       </div>
 
-      {/* Assigned tracks */}
       <section className="section">
-        <h3>Your Skill Tracks</h3>
-        <p className="text-muted section-subtitle">
-          Based on your profile, our engine assigned you these tracks. Each track has training modules and income opportunities.
-        </p>
+        <h3>{t('dash_your_tracks')}</h3>
+        <p className="text-muted section-subtitle">{t('dash_tracks_subtitle')}</p>
         <div className="tracks-grid">
           {trackDetails.map((track, i) => {
             const prog = trackProgress.find((p) => p.trackId === track.id)
@@ -95,17 +88,18 @@ export default function Dashboard() {
             return (
               <div key={track.id} className="track-card" style={{ '--track-color': track.color }}>
                 <div className="track-header">
-                  <span className="track-icon">{track.icon}</span>
-                  {i === 0 && <span className="badge badge-primary">Primary</span>}
+                  {i === 0 && <span className="badge badge-primary">{t('dash_primary')}</span>}
                 </div>
                 <h4>{track.label}</h4>
                 <p>{track.description}</p>
                 <div className="progress-bar">
                   <div className="progress-fill" style={{ width: `${pct}%`, background: track.color }} />
                 </div>
-                <div className="progress-label">{prog?.done || 0} / {prog?.total || 0} modules · {pct}%</div>
+                <div className="progress-label">
+                  {prog?.done || 0} / {prog?.total || 0} {t('dash_modules_label')} · {pct}%
+                </div>
                 <Link to="/training" className="btn btn-sm" style={{ background: track.color, color: '#fff', marginTop: '0.75rem' }}>
-                  Start Training →
+                  {t('dash_start_training')}
                 </Link>
               </div>
             )
@@ -113,17 +107,19 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* Certificates */}
       {certificates.length > 0 && (
         <section className="section">
-          <h3>Your Certificates 🏆</h3>
+          <h3>{t('dash_your_certs')}</h3>
           <div className="certificates-grid">
             {certificates.map((cert) => (
               <div key={cert.moduleId} className="certificate-card">
-                <div className="cert-icon">🎓</div>
                 <div>
                   <div className="cert-title">{cert.moduleName}</div>
-                  <div className="cert-date">{new Date(cert.earnedAt?.seconds * 1000).toLocaleDateString()}</div>
+                  <div className="cert-date">
+                    {cert.earnedAt?.seconds
+                      ? new Date(cert.earnedAt.seconds * 1000).toLocaleDateString()
+                      : ''}
+                  </div>
                 </div>
               </div>
             ))}
@@ -131,22 +127,12 @@ export default function Dashboard() {
         </section>
       )}
 
-      {/* Quick actions */}
       <section className="section">
-        <h3>Quick Actions</h3>
+        <h3>{t('dash_quick_actions')}</h3>
         <div className="quick-actions">
-          <Link to="/training" className="quick-action-card">
-            <span>📚</span>
-            <span>Continue Training</span>
-          </Link>
-          <Link to="/marketplace" className="quick-action-card">
-            <span>🛒</span>
-            <span>Browse Marketplace</span>
-          </Link>
-          <Link to="/marketplace?tab=sell" className="quick-action-card">
-            <span>🏪</span>
-            <span>List a Product</span>
-          </Link>
+          <Link to="/training" className="quick-action-card">{t('dash_continue_training')}</Link>
+          <Link to="/marketplace" className="quick-action-card">{t('dash_browse_market')}</Link>
+          <Link to="/marketplace?tab=sell" className="quick-action-card">{t('dash_list_product')}</Link>
         </div>
       </section>
     </div>
