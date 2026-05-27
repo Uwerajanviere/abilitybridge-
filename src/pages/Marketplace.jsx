@@ -33,6 +33,9 @@ export default function Marketplace() {
     const unsub = onSnapshot(q, (snap) => {
       setGigs(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
       setLoading(false)
+    }, (err) => {
+      console.error('Gigs load error:', err)
+      setLoading(false)
     })
     return unsub
   }, [])
@@ -41,6 +44,8 @@ export default function Marketplace() {
     const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'))
     const unsub = onSnapshot(q, (snap) => {
       setProducts(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+    }, (err) => {
+      console.error('Products load error:', err)
     })
     return unsub
   }, [])
@@ -91,7 +96,11 @@ export default function Marketplace() {
       await updateDoc(doc(db, 'gigs', gigId), { applicants: arrayUnion(currentUser.uid) })
       setSuccessMsg(t('market_application_sent'))
       setTimeout(() => setSuccessMsg(''), 3000)
-    } catch (err) { console.error(err) }
+    } catch (err) {
+      console.error('Apply error:', err)
+      setSuccessMsg('Could not submit application. Please try again.')
+      setTimeout(() => setSuccessMsg(''), 3000)
+    }
   }
 
   const filteredGigs = filterCat === 'All' ? gigs : gigs.filter((g) => g.category === filterCat)
